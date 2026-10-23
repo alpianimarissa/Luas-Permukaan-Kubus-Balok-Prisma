@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Interaktif: Luas Permukaan Bangun Ruang Sisi Datar</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- MathJax Configuration -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            startup: {
+                ready: () => {
+                    MathJax.startup.defaultReady();
+                    if (window.renderCurrentQuestion) {
+                        window.renderCurrentQuestion();
+                    }
+                }
+            }
+        };
+    </script>
+    <!-- MathJax v3 script -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-16">
+
+    <!-- Header & Progress Banner -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-600">
+                    <i class="fa-solid fa-square-poll-vertical text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-amber-600">
+                        Geo3D Interactive Quiz
+                    </h1>
+                    <p class="text-xs text-slate-500 font-medium">Uji Pemahaman Luas Permukaan (30 Soal)</p>
+                </div>
+            </div>
+
+            <!-- Score & Progress -->
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Progres & Skor</div>
+                    <div class="text-base font-bold text-slate-800">
+                        <span id="answered-count" class="text-blue-600">0</span>/30 Terjawab | Skor: <span id="current-score" class="text-emerald-600">0</span>
+                    </div>
+                </div>
+                <button onclick="resetQuiz()" class="px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition flex items-center gap-1.5" title="Reset Semua Jawaban">
+                    <i class="fa-solid fa-rotate-right"></i> Reset Kuis
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-100 h-2">
+            <div id="progress-bar-inner" class="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500 h-2 w-0 transition-all duration-300"></div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 mt-6 grid lg:grid-cols-12 gap-8">
+
+        <!-- NAVIGASI NOMOR SOAL (SIDEBAR / TOP) -->
+        <aside class="lg:col-span-4 order-2 lg:order-1">
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 card-shadow sticky top-24 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-list-ol text-blue-600"></i> Navigasi Soal
+                    </h2>
+                    <span class="text-xs font-medium px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full" id="storage-status">
+                        <i class="fa-solid fa-cloud-arrow-up text-emerald-500"></i> Tersimpan Otomatis
+                    </span>
+                </div>
+
+                <!-- Filter Mode -->
+                <div class="flex gap-1 bg-slate-100 p-1 rounded-lg text-xs font-medium">
+                    <button onclick="setFilter('all')" id="filter-all" class="flex-1 py-1 rounded bg-white shadow-sm font-bold text-blue-600">Semua (30)</button>
+                    <button onclick="setFilter('unanswered')" id="filter-unanswered" class="flex-1 py-1 rounded hover:bg-white text-slate-600">Belum (30)</button>
+                    <button onclick="setFilter('answered')" id="filter-answered" class="flex-1 py-1 rounded hover:bg-white text-slate-600">Sudah (0)</button>
+                </div>
+
+                <!-- Matrix Button Grid -->
+                <div id="question-matrix" class="grid grid-cols-5 gap-2 max-h-[380px] overflow-y-auto p-1">
+                    <!-- Dynamic Matrix Buttons -->
+                </div>
+
+                <!-- Legend -->
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 pt-2 border-t border-slate-100 font-medium">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded bg-emerald-500 border border-emerald-600"></span> Benar
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded bg-rose-500 border border-rose-600"></span> Salah
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded bg-blue-50 border-2 border-blue-600"></span> Sedang Dibuka
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded bg-slate-100 border border-slate-300"></span> Belum Diisi
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- KONTEN SOAL AKTIF -->
+        <section class="lg:col-span-8 order-1 lg:order-2 space-y-6">
+
+            <div class="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 card-shadow space-y-6" id="question-card">
+                
+                <!-- Category Tag & Question Number -->
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4 flex-wrap gap-2">
+                    <div class="flex items-center gap-3">
+                        <span id="question-badge" class="px-3 py-1 bg-blue-50 text-blue-600 font-bold rounded-lg text-sm border border-blue-200">
+                            Soal #1
+                        </span>
+                        <span id="question-category" class="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Kubus
+                        </span>
+                    </div>
+                    <span id="question-status-tag" class="text-xs font-medium px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full">
+                        Belum dijawab
+                    </span>
+                </div>
+
+                <!-- SVG Visual Illustration -->
+                <div id="illustration-container" class="bg-[#0b1329] rounded-xl p-5 flex flex-col items-center justify-center min-h-[200px] shadow-inner relative hidden border border-slate-800">
+                    <div id="svg-graphic" class="w-full flex justify-center"></div>
+                    <span id="svg-caption" class="text-xs text-slate-300 mt-2 font-semibold text-center"></span>
+                </div>
+
+                <!-- Question Text -->
+                <div>
+                    <h3 id="question-text" class="text-base md:text-lg font-bold text-slate-800 leading-relaxed">
+                        Loading soal...
+                    </h3>
+                </div>
+
+                <!-- Answer Options -->
+                <div id="options-container" class="space-y-3">
+                    <!-- Dynamic Answer Options -->
+                </div>
+
+                <!-- Instant Rationale / Explanation Box -->
+                <div id="rationale-box" class="hidden rounded-xl p-4 border text-sm space-y-2">
+                    <div id="rationale-header" class="font-bold flex items-center gap-2"></div>
+                    <p id="rationale-text" class="text-slate-700 leading-relaxed"></p>
+                </div>
+
+                <!-- Question Navigation Buttons -->
+                <div class="flex items-center justify-between border-t border-slate-100 pt-5 flex-wrap gap-3">
+                    <button onclick="prevQuestion()" id="btn-prev" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-left"></i> Sebelumnya
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleHint()" id="btn-hint" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-semibold rounded-xl text-xs transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-lightbulb"></i> Petunjuk
+                        </button>
+                    </div>
+                    <button onclick="nextQuestion()" id="btn-next" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition flex items-center gap-2">
+                        Berikutnya <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Hint Text Box -->
+                <div id="hint-box" class="hidden bg-amber-50 border border-amber-200 text-amber-800 p-3.5 rounded-xl text-xs font-medium">
+                    <i class="fa-solid fa-circle-info mr-1"></i> <span id="hint-text"></span>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-16 border-t border-slate-200 bg-white text-center py-6 text-xs text-slate-500 shadow-sm">
+        <p>© 2026 Geo3D Interactive Media. Didesain untuk kuis matematika interaktif dengan autosave local storage.</p>
+    </footer>
+
+    <!-- JavaScript Quiz Engine & Data -->
+    <script>
+        // 30 Question Dataset dengan kunci acak tersebar merata (A, B, C, D)
+        const quizData = [
+            // 1-6: KUBUS
+            {
+                id: 1,
+                category: "Kubus",
+                question: "Sebuah kubus memiliki panjang rusuk $s = 9\\text{ cm}$. Berapakah luas permukaan total kubus tersebut?",
+                options: [
+                    { text: "$324\\text{ cm}^2$", isCorrect: false, rationale: "Nilai ini dihitung dari $4s^2$ (hanya luas selimut samping), bukan total 6 sisi kubus." },
+                    { text: "$729\\text{ cm}^2$", isCorrect: false, rationale: "Nilai ini merupakan volume kubus ($s^3$), bukan luas permukaan." },
+                    { text: "$486\\text{ cm}^2$", isCorrect: true, rationale: "Luas permukaan kubus dirumuskan $L = 6s^2$. Dengan $s = 9\\text{ cm}$, diperoleh $L = 6 \\times 9^2 = 6 \\times 81 = 486\\text{ cm}^2$." },
+                    { text: "$243\\text{ cm}^2$", isCorrect: false, rationale: "Nilai ini hanya luas 3 sisi kubus ($3s^2$)." }
+                ],
+                hint: "Gunakan rumus luas permukaan kubus $L = 6s^2$.",
+                shape: "cube",
+                params: { s: "9 cm" }
+            },
+            {
+                id: 2,
+                category: "Kubus",
+                question: "Jika luas permukaan sebuah kubus adalah $294\\text{ cm}^2$, berapakah panjang rusuk kubus tersebut?",
+                options: [
+                    { text: "$6\\text{ cm}$", isCorrect: false, rationale: "Jika $s = 6\\text{ cm}$, maka $L = 6 \\times 36 = 216\\text{ cm}^2$." },
+                    { text: "$8\\text{ cm}$", isCorrect: false, rationale: "Jika $s = 8\\text{ cm}$, maka $L = 6 \\times 64 = 384\\text{ cm}^2$." },
+                    { text: "$9\\text{ cm}$", isCorrect: false, rationale: "Jika $s = 9\\text{ cm}$, maka $L = 6 \\times 81 = 486\\text{ cm}^2$." },
+                    { text: "$7\\text{ cm}$", isCorrect: true, rationale: "Dari $L = 6s^2 = 294$, kita dapatkan $s^2 = \\frac{294}{6} = 49$, sehingga $s = \\sqrt{49} = 7\\text{ cm}$." }
+                ],
+                hint: "Bagi luas permukaan dengan 6 terlebih dahulu untuk mendapatkan luas 1 sisi, lalu cari akar kuadratnya.",
+                shape: "cube",
+                params: { L: "294 cm²" }
+            },
+            {
+                id: 3,
+                category: "Kubus",
+                question: "Sebuah kotak kado berbentuk kubus tanpa tutup memiliki panjang rusuk $12\\text{ cm}$. Berapa luas kertas yang dibutuhkan untuk melapisi seluruh bagian luar kotak kado tersebut?",
+                options: [
+                    { text: "$720\\text{ cm}^2$", isCorrect: true, rationale: "Karena kotak terbuka tanpa tutup, terdapat 5 sisi persegi. $L = 5s^2 = 5 \\times 12^2 = 5 \\times 144 = 720\\text{ cm}^2$." },
+                    { text: "$864\\text{ cm}^2$", isCorrect: false, rationale: "Ini adalah luas kubus utuh dengan 6 sisi ($6 \\times 144$). Kotak tanpa tutup hanya memiliki 5 sisi." },
+                    { text: "$576\\text{ cm}^2$", isCorrect: false, rationale: "Ini merupakan luas selimut 4 sisi samping ($4s^2$)." },
+                    { text: "$1008\\text{ cm}^2$", isCorrect: false, rationale: "Ini dihitung menggunakan 7 sisi, yang mana tidak sesuai dengan geometri kubus." }
+                ],
+                hint: "Perhatikan kata kunci 'tanpa tutup', berarti jumlah sisi persegi yang dihitung hanya 5 buah.",
+                shape: "cube",
+                params: { s: "12 cm", note: "tanpa tutup" }
+            },
+            {
+                id: 4,
+                category: "Kubus",
+                question: "Dua buah kubus masing-masing memiliki panjang rusuk $4\\text{ cm}$ dan $8\\text{ cm}$. Berapakah perbandingan luas permukaan kedua kubus tersebut?",
+                options: [
+                    { text: "$1 : 2$", isCorrect: false, rationale: "Perbandingan $1 : 2$ adalah perbandingan panjang rusuknya, bukan perbandingan luas permukaannya." },
+                    { text: "$1 : 4$", isCorrect: true, rationale: "Perbandingan luas permukaan kubus sebanding dengan kuadrat rusuknya: $\\frac{L_1}{L_2} = \\left(\\frac{s_1}{s_2}\\right)^2 = \\left(\\frac{4}{8}\\right)^2 = \\left(\\frac{1}{2}\\right)^2 = 1 : 4$." },
+                    { text: "$1 : 8$", isCorrect: false, rationale: "Perbandingan $1 : 8$ adalah perbandingan volumenya ($1^3 : 2^3$)." },
+                    { text: "$1 : 6$", isCorrect: false, rationale: "Perbandingan ini tidak memiliki dasar hubungan kuadratik antar rusuk." }
+                ],
+                hint: "Rasio luas permukaan bangun ruang sejenis berbanding lurus dengan kuadrat dari rasio panjang rusuknya.",
+                shape: "cube",
+                params: { s1: "4 cm", s2: "8 cm" }
+            },
+            {
+                id: 5,
+                category: "Kubus",
+                question: "Berapa total panjang seluruh kawat yang dibutuhkan untuk membuat kerangka sebuah kubus yang luas permukaannya $150\\text{ cm}^2$?",
+                options: [
+                    { text: "$50\\text{ cm}$", isCorrect: false, rationale: "Salah membagi atau menghitung jumlah rusuk kubus." },
+                    { text: "$72\\text{ cm}$", isCorrect: false, rationale: "Mengalikan rusuk $6\\text{ cm}$ dengan 12." },
+                    { text: "$60\\text{ cm}$", isCorrect: true, rationale: "Dari $L = 6s^2 = 150$, didapat $s^2 = 25 \\Rightarrow s = 5\\text{ cm}$. Kerangka kubus memiliki 12 rusuk, jadi total kawat $= 12 \\times 5 = 60\\text{ cm}$." },
+                    { text: "$30\\text{ cm}$", isCorrect: false, rationale: "Hanya mengalikan $s = 5\\text{ cm}$ dengan 6 sisi." }
+                ],
+                hint: "Cari dulu panjang satu rusuk $s$, lalu kalikan dengan 12 (karena kubus memiliki 12 rusuk).",
+                shape: "cube",
+                params: { L: "150 cm²" }
+            },
+            {
+                id: 6,
+                category: "Kubus",
+                question: "Sebuah wadah berbentuk kubus dengan rusuk $15\\text{ cm}$ akan dicat bagian luarnya. Jika 1 kaleng cat kecil dapat melapisi luas sebesar $225\\text{ cm}^2$, berapa kaleng cat yang dibutuhkan?",
+                options: [
+                    { text: "$6\\text{ kaleng}$", isCorrect: true, rationale: "Luas 1 sisi kubus $= 15 \\times 15 = 225\\text{ cm}^2$. Total luas $= 6 \\times 225 = 1350\\text{ cm}^2$. Banyak cat $= \\frac{1350}{225} = 6\\text{ kaleng}$." },
+                    { text: "$4\\text{ kaleng}$", isCorrect: false, rationale: "Hanya melapisi 4 sisi samping." },
+                    { text: "$5\\text{ kaleng}$", isCorrect: false, rationale: "Hanya melapisi 5 sisi." },
+                    { text: "$8\\text{ kaleng}$", isCorrect: false, rationale: "Perhitungan cat berlebih." }
+                ],
+                hint: "Hitung total luas permukaan kubus lalu bagi dengan daya sebar 1 kaleng cat.",
+                shape: "cube",
+                params: { s: "15 cm" }
+            },
+
+            // 7-12: BALOK
+            {
+                id: 7,
+                category: "Balok",
+                question: "Sebuah balok berukuran panjang $p = 10\\text{ cm}$, lebar $l = 6\\text{ cm}$, dan tinggi $t = 4\\text{ cm}$. Berapakah luas permukaan total balok tersebut?",
+                options: [
+                    { text: "$124\\text{ cm}^2$", isCorrect: false, rationale: "Lupa mengalikan 2 pada jumlah luas ketiga pasangan sisi." },
+                    { text: "$240\\text{ cm}^2$", isCorrect: false, rationale: "Nilai ini adalah volume balok ($p \\times l \\times t$), bukan luas permukaan." },
+                    { text: "$248\\text{ cm}^2$", isCorrect: true, rationale: "Rumus balok: $L = 2(pl + pt + lt) = 2(10 \\cdot 6 + 10 \\cdot 4 + 6 \\cdot 4) = 2(60 + 40 + 24) = 2(124) = 248\\text{ cm}^2$." },
+                    { text: "$300\\text{ cm}^2$", isCorrect: false, rationale: "Kesalahan perkalian pada penjumlahan pasangan sisi." }
+                ],
+                hint: "Gunakan rumus $L = 2(pl + pt + lt)$.",
+                shape: "cuboid",
+                params: { p: "10 cm", l: "6 cm", t: "4 cm" }
+            },
+            {
+                id: 8,
+                category: "Balok",
+                question: "Sebuah akuarium berbentuk balok memiliki ukuran panjang $15\\text{ dm}$, lebar $8\\text{ dm}$, dan tinggi $10\\text{ dm}$. Jika bagian atas akuarium terbuka, berapakah luas kaca minimum yang diperlukan?",
+                options: [
+                    { text: "$700\\text{ dm}^2$", isCorrect: false, rationale: "Ini adalah luas permukaan balok tertutup lengkap dengan alas dan tutup ($2(120+150+80) = 700$)." },
+                    { text: "$460\\text{ dm}^2$", isCorrect: false, rationale: "Terjadi pengurangan yang salah pada luas dinding akuarium." },
+                    { text: "$1200\\text{ dm}^2$", isCorrect: false, rationale: "Nilai ini merupakan volume akuarium." },
+                    { text: "$580\\text{ dm}^2$", isCorrect: true, rationale: "Akuarium terbuka tanpa tutup atas ($pl$). $L = pl + 2pt + 2lt = (15 \\times 8) + 2(15 \\times 10) + 2(8 \\times 10) = 120 + 300 + 160 = 580\\text{ dm}^2$." }
+                ],
+                hint: "Kurangi 1 luas alas/tutup ($pl$) dari rumus luas balok total.",
+                shape: "cuboid",
+                params: { p: "15 dm", l: "8 dm", t: "10 dm", note: "tanpa tutup" }
+            },
+            {
+                id: 9,
+                category: "Balok",
+                question: "Suatu ruangan berbentuk balok berukuran $8\\text{ m} \\times 6\\text{ m} \\times 3\\text{ m}$. Dinding bagian dalam ruangan tersebut akan dicat. Berapakah luas permukaan dinding yang dicat (tidak termasuk alas dan atap)?",
+                options: [
+                    { text: "$84\\text{ m}^2$", isCorrect: true, rationale: "Luas dinding samping (selimut) $= 2(p \\times t) + 2(l \\times t) = 2(8 \\times 3) + 2(6 \\times 3) = 48 + 36 = 84\\text{ m}^2$." },
+                    { text: "$180\\text{ m}^2$", isCorrect: false, rationale: "Merupakan total luas seluruh sisi termasuk alas dan atap." },
+                    { text: "$96\\text{ m}^2$", isCorrect: false, rationale: "Salah memperhitungkan ukuran lebar dan tinggi." },
+                    { text: "$144\\text{ m}^2$", isCorrect: false, rationale: "Hasil perkalian volume dikurangi sisi alas." }
+                ],
+                hint: "Dinding ruangan hanya terdiri dari 4 sisi tegak (depan, belakang, kiri, kanan), yaitu $2pt + 2lt$.",
+                shape: "cuboid",
+                params: { p: "8 m", l: "6 m", t: "3 m", note: "dinding saja" }
+            },
+            {
+                id: 10,
+                category: "Balok",
+                question: "Diketahui luas permukaan balok adalah $198\\text{ cm}^2$. Jika panjang balok $9\\text{ cm}$ dan lebarnya $6\\text{ cm}$, berapakah tinggi balok tersebut?",
+                options: [
+                    { text: "$4\\text{ cm}$", isCorrect: false, rationale: "Jika $t = 4\\text{ cm}$, maka $L = 2(54 + 36 + 24) = 228\\text{ cm}^2$." },
+                    { text: "$3\\text{ cm}$", isCorrect: true, rationale: "$L = 2(pl + pt + lt) \\Rightarrow 198 = 2(54 + 9t + 6t) \\Rightarrow 99 = 54 + 15t \\Rightarrow 15t = 45 \\Rightarrow t = 3\\text{ cm}$." },
+                    { text: "$5\\text{ cm}$", isCorrect: false, rationale: "Jika $t = 5\\text{ cm}$, maka $L = 2(54 + 45 + 30) = 258\\text{ cm}^2$." },
+                    { text: "$2\\text{ cm}$", isCorrect: false, rationale: "Jika $t = 2\\text{ cm}$, maka $L = 2(54 + 18 + 12) = 168\\text{ cm}^2$." }
+                ],
+                hint: "Masukan nilai $L$, $p$, dan $l$ ke rumus $L = 2(pl + pt + lt)$, lalu selesaikan persamaan untuk mencari $t$.",
+                shape: "cuboid",
+                params: { L: "198 cm²", p: "9 cm", l: "6 cm" }
+            },
+            {
+                id: 11,
+                category: "Balok",
+                question: "Sebuah balok memiliki rasio panjang : lebar : tinggi $= 4 : 3 : 2$. Jika luas permukaannya $468\\text{ cm}^2$, berapakah panjang balok tersebut?",
+                options: [
+                    { text: "$6\\text{ cm}$", isCorrect: false, rationale: "Nilai 6 cm merupakan lebar balok ($3x$)." },
+                    { text: "$9\\text{ cm}$", isCorrect: false, rationale: "Nilai ini dihitung dari rasio $3x$." },
+                    { text: "$15\\text{ cm}$", isCorrect: false, rationale: "Salah dalam memodelkan rasio variabel." },
+                    { text: "$12\\text{ cm}$", isCorrect: true, rationale: "Misal $p=4x, l=3x, t=2x$. $L = 2(12x^2 + 6x^2 + 8x^2) = 2(26x^2) = 52x^2 = 468 \\Rightarrow x^2 = 9 \\Rightarrow x = 3$. Maka $p = 4(3) = 12\\text{ cm}$." }
+                ],
+                hint: "Gunakan variabel $x$ untuk tiap perbandingan ($p=4x, l=3x, t=2x$), lalu substitusikan ke rumus luas permukaan.",
+                shape: "cuboid",
+                params: { ratio: "4:3:2", L: "468 cm²" }
+            },
+            {
+                id: 12,
+                category: "Balok",
+                question: "Berapa meter pita dekorasi yang dibutuhkan minimal untuk melilit sekali mengelilingi rusuk-rusuk balok dengan ukuran $12\\text{ cm} \\times 8\\text{ cm} \\times 5\\text{ cm}$?",
+                options: [
+                    { text: "$0.50\\text{ m}$", isCorrect: false, rationale: "Hanya mengalikan dengan 2 bukan 4 pasang rusuk." },
+                    { text: "$1.00\\text{ m}$", isCorrect: true, rationale: "Total panjang rusuk balok $= 4(p + l + t) = 4(12 + 8 + 5) = 4(25) = 100\\text{ cm} = 1.00\\text{ m}$." },
+                    { text: "$2.00\\text{ m}$", isCorrect: false, rationale: "Terlalu besar, mengalikan dengan 8." },
+                    { text: "$1.20\\text{ m}$", isCorrect: false, rationale: "Kesalahan penjumlahan komponen rusuk." }
+                ],
+                hint: "Balok memiliki 4 rusuk panjang, 4 rusuk lebar, dan 4 rusuk tinggi. Rumus panjang kerangka $= 4(p+l+t)$. Ubah cm ke meter.",
+                shape: "cuboid",
+                params: { p: "12 cm", l: "8 cm", t: "5 cm" }
+            },
+
+            // 13-18: PRISMA SEGITIGA
+            {
+                id: 13,
+                category: "Prisma Segitiga",
+                question: "Sebuah prisma memiliki alas berbentuk segitiga siku-siku dengan sisi alas $5\\text{ cm}$, $12\\text{ cm}$, dan $13\\text{ cm}$. Jika tinggi prisma $20\\text{ cm}$, hitung luas permukaan prisma!",
+                options: [
+                    { text: "$600\\text{ cm}^2$", isCorrect: false, rationale: "Hanya luas selimut prisma ($K_{\\Delta} \\times t_p = 30 \\times 20 = 600$)." },
+                    { text: "$720\\text{ cm}^2$", isCorrect: false, rationale: "Salah menghitung keliling atau luas alas segitiga." },
+                    { text: "$660\\text{ cm}^2$", isCorrect: true, rationale: "Luas alas $= \\frac{1}{2} \\times 5 \\times 12 = 30\\text{ cm}^2$. Total Luas $= 2(L_{\\text{alas}}) + (K_{\\Delta} \\times t_p) = 2(30) + (5 + 12 + 13) \\times 20 = 60 + 30 \\times 20 = 60 + 600 = 660\\text{ cm}^2$." },
+                    { text: "$540\\text{ cm}^2$", isCorrect: false, rationale: "Lupa menambahkan 2 kali luas alas." }
+                ],
+                hint: "Hitung luas 2 segitiga alas $(2 \\times \\frac{1}{2} \\times a \\times t_a)$ lalu tambahkan dengan luas 3 sisi tegak $(K_{\\Delta} \\times t_p)$.",
+                shape: "prism",
+                params: { a: "5 cm", ta: "12 cm", c: "13 cm", tp: "20 cm" }
+            },
+            {
+                id: 14,
+                category: "Prisma Segitiga",
+                question: "Sebuah tenda pramuka berbentuk prisma segitiga sama kaki. Sisi alas segitiga $6\\text{ m}$, tinggi segitiga $4\\text{ m}$ (sisi miring segitiga $5\\text{ m}$), dan panjang tenda (tinggi prisma) $8\\text{ m}$. Berapa luas kain yang diperlukan untuk menutup seluruh permukaan tenda termasuk alasnya?",
+                options: [
+                    { text: "$128\\text{ m}^2$", isCorrect: false, rationale: "Hanya menghitung selimut tenda tanpa kedua alas segitiga depan-belakang." },
+                    { text: "$176\\text{ m}^2$", isCorrect: false, rationale: "Terjadi kesalahan dalam menentukan sisi miring segitiga sama kaki." },
+                    { text: "$152\\text{ m}^2$", isCorrect: true, rationale: "Luas 2 alas $= 2 \\times (\\frac{1}{2} \\times 6 \\times 4) = 24\\text{ m}^2$. Keliling alas $= 6 + 5 + 5 = 16\\text{ m}$. Luas selimut $= 16 \\times 8 = 128\\text{ m}^2$. Total Luas $= 24 + 128 = 152\\text{ m}^2$." },
+                    { text: "$140\\text{ m}^2$", isCorrect: false, rationale: "Penggunaan keliling alas yang kurang tepat." }
+                ],
+                hint: "Keliling segitiga sama kaki $= a + 2 s_{\\text{miring}} = 6 + 5 + 5 = 16\\text{ m}$.",
+                shape: "prism",
+                params: { a: "6 m", ta: "4 m", smiring: "5 m", tp: "8 m" }
+            },
+            {
+                id: 15,
+                category: "Prisma Segitiga",
+                question: "Prisma segitiga sama sisi memiliki panjang sisi alas $6\\text{ cm}$ dan tinggi prisma $10\\text{ cm}$. Jika luas alas segitiga sama sisi adalah $9\\sqrt{3}\\text{ cm}^2$, berapakah luas permukaan prisma tersebut?",
+                options: [
+                    { text: "$(180 + 9\\sqrt{3})\\text{ cm}^2$", isCorrect: false, rationale: "Hanya menghitung 1 alas segitiga saja." },
+                    { text: "$(180 + 18\\sqrt{3})\\text{ cm}^2$", isCorrect: true, rationale: "Luas 2 alas $= 2 \\times 9\\sqrt{3} = 18\\sqrt{3}$. Keliling alas $= 3 \\times 6 = 18\\text{ cm}$. Luas selimut $= 18 \\times 10 = 180\\text{ cm}^2$. Total Luas $= (180 + 18\\sqrt{3})\\text{ cm}^2$." },
+                    { text: "$(60 + 18\\sqrt{3})\\text{ cm}^2$", isCorrect: false, rationale: "Salah mengalikan keliling dengan tinggi prisma." },
+                    { text: "$(120 + 18\\sqrt{3})\\text{ cm}^2$", isCorrect: false, rationale: "Hanya mengalikan 2 sisi tegak." }
+                ],
+                hint: "Jumlahkan luas selimut $(3 \\times s \\times t_p)$ dengan $2 \\times L_{\\text{alas}}$.",
+                shape: "prism",
+                params: { s: "6 cm", tp: "10 cm" }
+            },
+            {
+                id: 16,
+                category: "Prisma Segitiga",
+                question: "Luas selimut (sisi-sisi tegak) sebuah prisma segitiga siku-siku adalah $360\\text{ cm}^2$. Jika keliling alas segitiganya $30\\text{ cm}$, berapakah tinggi prisma tersebut?",
+                options: [
+                    { text: "$10\\text{ cm}$", isCorrect: false, rationale: "Jika tinggi $10\\text{ cm}$, luas selimut $= 300\\text{ cm}^2$." },
+                    { text: "$15\\text{ cm}$", isCorrect: false, rationale: "Jika tinggi $15\\text{ cm}$, luas selimut $= 450\\text{ cm}^2$." },
+                    { text: "$12\\text{ cm}$", isCorrect: true, rationale: "Luas selimut $= K_{\\Delta} \\times t_p \\Rightarrow 360 = 30 \\times t_p \\Rightarrow t_p = \\frac{360}{30} = 12\\text{ cm}$." },
+                    { text: "$18\\text{ cm}$", isCorrect: false, rationale: "Jika tinggi $18\\text{ cm}$, luas selimut $= 540\\text{ cm}^2$." }
+                ],
+                hint: "Luas selimut prisma $= \\text{Keliling Alas} \\times t_p$. Tentukan $t_p$.",
+                shape: "prism",
+                params: { Lselimut: "360 cm²", Kalas: "30 cm" }
+            },
+            {
+                id: 17,
+                category: "Prisma Segitiga",
+                question: "Berapa banyak rusuk dan titik sudut yang dimiliki oleh sebuah prisma segitiga?",
+                options: [
+                    { text: "$6$ rusuk dan $9$ titik sudut", isCorrect: false, rationale: "Terbalik antara jumlah rusuk dan titik sudut." },
+                    { text: "$8$ rusuk dan $5$ titik sudut", isCorrect: false, rationale: "Ini adalah atribut dari limas segi empat." },
+                    { text: "$9$ rusuk dan $6$ titik sudut", isCorrect: true, rationale: "Prisma segitiga (prisma segi-$n$) memiliki $3n$ rusuk ($3 \\times 3 = 9$) dan $2n$ titik sudut ($2 \\times 3 = 6$)." },
+                    { text: "$9$ rusuk dan $9$ titik sudut", isCorrect: false, rationale: "Jumlah titik sudut terlalu banyak." }
+                ],
+                hint: "Untuk prisma segi-$n$: jumlah rusuk $= 3n$, jumlah titik sudut $= 2n$.",
+                shape: "prism",
+                params: { type: "geometri" }
+            },
+            {
+                id: 18,
+                category: "Prisma Segitiga",
+                question: "Cokelat batangan dikemas dalam wadah berbentuk prisma segitiga siku-siku ($3\\text{ cm}, 4\\text{ cm}, 5\\text{ cm}$) dengan tinggi prisma $15\\text{ cm}$. Berapa luas kertas karton minimal untuk membuat 1 wadah tersebut?",
+                options: [
+                    { text: "$180\\text{ cm}^2$", isCorrect: false, rationale: "Hanya luas selimut tanpa kedua alas segitiga." },
+                    { text: "$192\\text{ cm}^2$", isCorrect: true, rationale: "Luas 2 alas $= 2 \\times (\\frac{1}{2} \\times 3 \\times 4) = 12\\text{ cm}^2$. Luas selimut $= (3 + 4 + 5) \\times 15 = 12 \\times 15 = 180\\text{ cm}^2$. Total $= 12 + 180 = 192\\text{ cm}^2$." },
+                    { text: "$204\\text{ cm}^2$", isCorrect: false, rationale: "Terjadi kesalahan pada perhitungan luas segitiga alas." },
+                    { text: "$168\\text{ cm}^2$", isCorrect: false, rationale: "Pengurangan luas sisi samping." }
+                ],
+                hint: "Sisi siku-siku alas $= 3\\text{ cm}$ dan $4\\text{ cm}$, sisi miring $= 5\\text{ cm}$.",
+                shape: "prism",
+                params: { a: "3 cm", ta: "4 cm", c: "5 cm", tp: "15 cm" }
+            },
+
+            // 19-24: PRISMA SEGI LIMA
+            {
+                id: 19,
+                category: "Prisma Segi Lima",
+                question: "Sebuah prisma segi lima beraturan memiliki panjang sisi alas $s = 6\\text{ cm}$, apotema alas $r = 4.1\\text{ cm}$, dan tinggi prisma $t_p = 12\\text{ cm}$. Berapakah luas permukaan prisma tersebut?",
+                options: [
+                    { text: "$360\\text{ cm}^2$", isCorrect: false, rationale: "Hanya menghitung 5 sisi tegak (selimut)." },
+                    { text: "$421.5\\text{ cm}^2$", isCorrect: false, rationale: "Hanya menambahkan 1 alas segi lima." },
+                    { text: "$483\\text{ cm}^2$", isCorrect: true, rationale: "Luas 1 alas $= \\frac{5}{2} \\cdot s \\cdot r = \\frac{5}{2} \\times 6 \\times 4.1 = 61.5\\text{ cm}^2$. Luas 2 alas $= 123\\text{ cm}^2$. Luas selimut $= 5 \\times s \\times t_p = 5 \\times 6 \\times 12 = 360\\text{ cm}^2$. Total $= 123 + 360 = 483\\text{ cm}^2$." },
+                    { text: "$510\\text{ cm}^2$", isCorrect: false, rationale: "Perhitungan apotema yang keliru." }
+                ],
+                hint: "Gunakan $L_{\\text{alas}} = \\frac{5}{2} \\cdot s \\cdot r$ dan $L_{\\text{selimut}} = 5 \\cdot s \\cdot t_p$.",
+                shape: "pentagon",
+                params: { s: "6 cm", r: "4.1 cm", tp: "12 cm" }
+            },
+            {
+                id: 20,
+                category: "Prisma Segi Lima",
+                question: "Berapakah jumlah seluruh sisi (bidang), rusuk, dan titik sudut dari sebuah prisma segi lima?",
+                options: [
+                    { text: "$5$ sisi, $10$ rusuk, dan $5$ titik sudut", isCorrect: false, rationale: "Atribut ini milik limas segi lima." },
+                    { text: "$7$ sisi, $15$ rusuk, dan $10$ titik sudut", isCorrect: true, rationale: "Untuk prisma segi-$n$: Banyak Sisi $= n+2 = 7$, Banyak Rusuk $= 3n = 15$, Banyak Titik Sudut $= 2n = 10$." },
+                    { text: "$7$ sisi, $10$ rusuk, dan $15$ titik sudut", isCorrect: false, rationale: "Terbalik antara jumlah rusuk dan titik sudut." },
+                    { text: "$6$ sisi, $12$ rusuk, dan $8$ titik sudut", isCorrect: false, rationale: "Atribut ini milik prisma segi empat / balok." }
+                ],
+                hint: "Rumus umum prisma segi-$n$: Sisi $= n+2$, Rusuk $= 3n$, Titik Sudut $= 2n$.",
+                shape: "pentagon",
+                params: { type: "geometri" }
+            },
+            {
+                id: 21,
+                category: "Prisma Segi Lima",
+                question: "Jika luas selimut sebuah prisma segi lima beraturan adalah $250\\text{ cm}^2$ dan tinggi prismanya $10\\text{ cm}$, berapakah panjang satu sisi alas segi lima tersebut?",
+                options: [
+                    { text: "$6\\text{ cm}$", isCorrect: false, rationale: "Jika $s = 6\\text{ cm}$, luas selimut $= 5 \\times 6 \\times 10 = 300\\text{ cm}^2$." },
+                    { text: "$4\\text{ cm}$", isCorrect: false, rationale: "Jika $s = 4\\text{ cm}$, luas selimut $= 5 \\times 4 \\times 10 = 200\\text{ cm}^2$." },
+                    { text: "$5\\text{ cm}$", isCorrect: true, rationale: "Luas selimut $= 5 \\times s \\times t_p \\Rightarrow 250 = 5 \\times s \\times 10 \\Rightarrow 250 = 50s \\Rightarrow s = 5\\text{ cm}$." },
+                    { text: "$10\\text{ cm}$", isCorrect: false, rationale: "Kesalahan membagi dengan jumlah sisi." }
+                ],
+                hint: "Luas selimut prisma segi lima terdiri dari 5 persegi panjang identik: $5 \\times s \\times t_p$.",
+                shape: "pentagon",
+                params: { Lselimut: "250 cm²", tp: "10 cm" }
+            },
+            {
+                id: 22,
+                category: "Prisma Segi Lima",
+                question: "Sebuah podium penyerahan piala berbentuk prisma segi lima beraturan (tanpa bidang alas bawah/menempel tanah). Sisi alas $80\\text{ cm}$, apotema alas $55\\text{ cm}$, dan tinggi $50\\text{ cm}$. Berapakah luas permukaan kayu luar yang terlihat?",
+                options: [
+                    { text: "$22,200\\text{ cm}^2$", isCorrect: false, rationale: "Kesalahan kalkulasi perkalian apotema." },
+                    { text: "$20,000\\text{ cm}^2$", isCorrect: false, rationale: "Hanya menghitung 5 sisi samping tanpa atap atas podium." },
+                    { text: "$31,000\\text{ cm}^2$", isCorrect: true, rationale: "Luas kayu $= 1(L_{\\text{alas atas}}) + 5(s \\times t_p) = (\\frac{5}{2} \\times 80 \\times 55) + 5(80 \\times 50) = 11,000 + 20,000 = 31,000\\text{ cm}^2$." },
+                    { text: "$26,000\\text{ cm}^2$", isCorrect: false, rationale: "Kesalahan perkalian apotema." }
+                ],
+                hint: "Hitung 1 luas segi lima (atap atas) ditambah 5 persegi panjang (sisi samping).",
+                shape: "pentagon",
+                params: { s: "80 cm", r: "55 cm", tp: "50 cm" }
+            },
+            {
+                id: 23,
+                category: "Prisma Segi Lima",
+                question: "Rumus luas alas segi lima beraturan yang dibentuk dari 5 segitiga sama kaki dengan alas $s$ dan tinggi segitiga (apotema) $r$ adalah...",
+                options: [
+                    { text: "$L = 5 \\times s \\times r$", isCorrect: false, rationale: "Lupa membagi 2 pada rumus luas segitiga." },
+                    { text: "$L = \\frac{5}{4} \\cdot s^2$", isCorrect: false, rationale: "Ini bukan formula dengan parameter apotema $r$." },
+                    { text: "$L = \\frac{5}{2} \\cdot s \\cdot r$", isCorrect: true, rationale: "Satu segitiga berluas $\\frac{1}{2}s \\cdot r$. Karena ada 5 segitiga, maka $L_{\\text{alas}} = 5 \\times (\\frac{1}{2}sr) = \\frac{5}{2}sr$." },
+                    { text: "$L = 10 \\cdot s \\cdot r$", isCorrect: false, rationale: "Terlalu besar karena mengalikan dengan 2." }
+                ],
+                hint: "Luas alas $= 5 \\times \\text{Luas } 1 \\text{ Segitiga} = 5 \\times (\\frac{1}{2} \\cdot a \\cdot t)$.",
+                shape: "pentagon",
+                params: { concept: "deduksi" }
+            },
+            {
+                id: 24,
+                category: "Prisma Segi Lima",
+                question: "Sebuah tempat pensil berbentuk prisma segi lima beraturan tanpa tutup atas memiliki $s = 4\\text{ cm}$, $r = 2.8\\text{ cm}$, dan $t_p = 12\\text{ cm}$. Berapa luas permukaan tempat pensil tersebut?",
+                options: [
+                    { text: "$220\\text{ cm}^2$", isCorrect: false, rationale: "Kesalahan perkalian sisi samping." },
+                    { text: "$296\\text{ cm}^2$", isCorrect: false, rationale: "Termasuk memperhitungkan tutup atas." },
+                    { text: "$240\\text{ cm}^2$", isCorrect: false, rationale: "Hanya luas selimut saja." },
+                    { text: "$268\\text{ cm}^2$", isCorrect: true, rationale: "Luas $= 1(L_{\\text{alas}}) + 5(s \\cdot t_p) = (\\frac{5}{2} \\times 4 \\times 2.8) + (5 \\times 4 \\times 12) = 28 + 240 = 268\\text{ cm}^2$." }
+                ],
+                hint: "Hitung 1 alas $+ 5$ sisi tegak.",
+                shape: "pentagon",
+                params: { s: "4 cm", r: "2.8 cm", tp: "12 cm" }
+            },
+
+            // 25-30: PRISMA SEGI ENAM
+            {
+                id: 25,
+                category: "Prisma Segi Enam",
+                question: "Sebuah prisma segi enam beraturan memiliki panjang sisi alas $s = 6\\text{ cm}$ dan tinggi prisma $t_p = 10\\text{ cm}$. Menggunakan pendekatan $\\sqrt{3} \\approx 1.732$, berapakah luas permukaan total prisma tersebut?",
+                options: [
+                    { text: "$453.5\\text{ cm}^2$", isCorrect: false, rationale: "Hanya menghitung 1 alas segi enam." },
+                    { text: "$547.1\\text{ cm}^2$", isCorrect: true, rationale: "Luas 1 alas $= \\frac{3\\sqrt{3}}{2} s^2 = 2.598 \\times 36 = 93.53\\text{ cm}^2$. Luas 2 alas $= 187.06\\text{ cm}^2$. Luas selimut $= 6 \\times s \\times t_p = 6 \\times 6 \\times 10 = 360\\text{ cm}^2$. Total $= 187.06 + 360 = 547.06 \\approx 547.1\\text{ cm}^2$." },
+                    { text: "$360.0\\text{ cm}^2$", isCorrect: false, rationale: "Hanya menghitung luas selimut saja." },
+                    { text: "$620.4\\text{ cm}^2$", isCorrect: false, rationale: "Terjadi kesalahan konstanta pengganda." }
+                ],
+                hint: "Gunakan rumus $L = 2\\left(\\frac{3\\sqrt{3}}{2} s^2\\right) + 6(s \\cdot t_p) \\approx 2(2.598 s^2) + 6 s t_p$.",
+                shape: "hexagon",
+                params: { s: "6 cm", tp: "10 cm" }
+            },
+            {
+                id: 26,
+                category: "Prisma Segi Enam",
+                question: "Dari manakah asal koefisien $\\frac{3\\sqrt{3}}{2}$ pada rumus luas alas segi enam beraturan $\\left(L = \\frac{3\\sqrt{3}}{2} s^2\\right)$?",
+                options: [
+                    { text: "Dari perkalian keliling segi enam dengan tinggi prisma", isCorrect: false, rationale: "Ini merupakan konsep luas selimut, bukan luas alas segi enam." },
+                    { text: "Dari penggabungan 6 buah segitiga sama sisi yang masing-masing berluas $\\frac{\\sqrt{3}}{4} s^2$", isCorrect: true, rationale: "Segi enam beraturan terdiri atas 6 segitiga sama sisi identik. Luas 1 segitiga $= \\frac{1}{2} \\cdot s \\cdot (s \\frac{\\sqrt{3}}{2}) = \\frac{\\sqrt{3}}{4} s^2$. Maka $6 \\times \\frac{\\sqrt{3}}{4} s^2 = \\frac{6\\sqrt{3}}{4} s^2 = \\frac{3\\sqrt{3}}{2} s^2$." },
+                    { text: "Dari penjumlahan 4 buah segitiga siku-siku sama kaki", isCorrect: false, rationale: "Segi enam beraturan dibentuk dari 6 segitiga sama sisi, bukan 4 segitiga siku-siku." },
+                    { text: "Dari formula lingkaran luar segi enam beraturan", isCorrect: false, rationale: "Tidak diturunkan langsung dari rumus luas lingkaran." }
+                ],
+                hint: "Ingat dekonstruksi segi enam beraturan menjadi 6 segitiga sama sisi identik.",
+                shape: "hexagon",
+                params: { concept: "penurunan rumus" }
+            },
+            {
+                id: 27,
+                category: "Prisma Segi Enam",
+                question: "Sebuah kolom/pilar gedung berbentuk prisma segi enam beraturan memiliki sisi alas $10\\text{ cm}$ dan tinggi pilar $200\\text{ cm}$. Berapakah luas selimut (6 sisi tegak) pilar tersebut?",
+                options: [
+                    { text: "$2,000\\text{ cm}^2$", isCorrect: false, rationale: "Hanya menghitung 1 sisi tegak ($10 \\times 200$)." },
+                    { text: "$14,598\\text{ cm}^2$", isCorrect: false, rationale: "Memasukkan kedua alas pilar yang menempel lantai dan atap." },
+                    { text: "$8,000\\text{ cm}^2$", isCorrect: false, rationale: "Hanya mengalikan 4 sisi tegak." },
+                    { text: "$12,000\\text{ cm}^2$", isCorrect: true, rationale: "Luas selimut $= 6 \\times s \\times t_p = 6 \\times 10 \\times 200 = 12,000\\text{ cm}^2 = 1.2\\text{ m}^2$." }
+                ],
+                hint: "Pilar gedung yang dicat selimutnya saja $= 6 \\times s \\times t_p$.",
+                shape: "hexagon",
+                params: { s: "10 cm", tp: "200 cm", note: "selimut saja" }
+            },
+            {
+                id: 28,
+                category: "Prisma Segi Enam",
+                question: "Berapa jumlah diagonal bidang samping (pada sisi tegak) yang dimiliki oleh sebuah prisma segi enam?",
+                options: [
+                    { text: "$6$ diagonal bidang", isCorrect: false, rationale: "Hanya menghitung 1 diagonal per sisi tegak." },
+                    { text: "$12$ diagonal bidang", isCorrect: true, rationale: "Prisma segi enam memiliki 6 sisi tegak berbentuk persegi panjang. Setiap persegi panjang memiliki 2 diagonal bidang, sehingga total $= 6 \\times 2 = 12$ diagonal bidang samping." },
+                    { text: "$18$ diagonal bidang", isCorrect: false, rationale: "Memasukkan diagonal pada alas dan atap." },
+                    { text: "$24$ diagonal bidang", isCorrect: false, rationale: "Perhitungan berlebihan." }
+                ],
+                hint: "Ada 6 persegi panjang di selimut prisma, dan setiap persegi panjang memiliki 2 diagonal.",
+                shape: "hexagon",
+                params: { type: "geometri" }
+            },
+            {
+                id: 29,
+                category: "Prisma Segi Enam",
+                question: "Jika panjang sisi alas prisma segi enam beraturan diperbesar menjadi $2$ kali lipat semula, sedangkan tingginya tetap, maka luas alas prisma segi enam tersebut akan menjadi...",
+                options: [
+                    { text: "$2$ kali lipat semula", isCorrect: false, rationale: "Ini adalah perubahan linear rusuk, bukan perubahan luas kuadratik." },
+                    { text: "$6$ kali lipat semula", isCorrect: false, rationale: "Salah mengasumsikan perkalian dengan jumlah sisi." },
+                    { text: "$4$ kali lipat semula", isCorrect: true, rationale: "Luas alas berbanding lurus dengan kuadrat panjang sisinya ($L_{\\text{alas}} \\propto s^2$). Jika $s_2 = 2s_1$, maka $L_2 = (2)^2 L_1 = 4 L_1$." },
+                    { text: "$8$ kali lipat semula", isCorrect: false, rationale: "Ini adalah perubahan kuadrat jika volume yang diukur." }
+                ],
+                hint: "Luas alas segi enam mengandung variabel $s^2$, sehingga perubahan sebanding dengan $(k)^2$.",
+                shape: "hexagon",
+                params: { concept: "skala" }
+            },
+            {
+                id: 30,
+                category: "Prisma Segi Enam",
+                question: "Sebuah kotak tempat perhiasan berbentuk prisma segi enam beraturan dengan $s = 5\\text{ cm}$ dan $t_p = 8\\text{ cm}$. Jika luas alasnya dihitung $65\\text{ cm}^2$, berapakah luas permukaan total kotak tersebut?",
+                options: [
+                    { text: "$305\\text{ cm}^2$", isCorrect: false, rationale: "Hanya menambahkan 1 alas saja ($65 + 240$)." },
+                    { text: "$240\\text{ cm}^2$", isCorrect: false, rationale: "Hanya luas selimut tanpa alas dan tutup." },
+                    { text: "$410\\text{ cm}^2$", isCorrect: false, rationale: "Kesalahan perkalian selimut." },
+                    { text: "$370\\text{ cm}^2$", isCorrect: true, rationale: "Luas 2 alas $= 2 \\times 65 = 130\\text{ cm}^2$. Luas selimut $= 6 \\times s \\times t_p = 6 \\times 5 \\times 8 = 240\\text{ cm}^2$. Total Luas $= 130 + 240 = 370\\text{ cm}^2$." }
+                ],
+                hint: "Total Luas $= 2(L_{\\text{alas}}) + (6 \\cdot s \\cdot t_p)$.",
+                shape: "hexagon",
+                params: { Lalas: "65 cm²", s: "5 cm", tp: "8 cm" }
+            }
+        ];
+
+        // QUIZ STATE MANAGEMENT WITH LOCALSTORAGE
+        const STORAGE_KEY = "geo3d_surface_area_quiz_answers_v2";
+        let userAnswers = {}; 
+        let currentQuestionIdx = 0;
+        let activeFilter = 'all';
+
+        function refreshMathJax() {
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
+            }
+        }
+
+        function loadSavedState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    userAnswers = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error("Gagal membaca dari localStorage", e);
+            }
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(userAnswers));
+                updateStorageBadge();
+            } catch (e) {
+                console.error("Gagal menyimpan ke localStorage", e);
+            }
+        }
+
+        function updateStorageBadge() {
+            const badge = document.getElementById('storage-status');
+            badge.innerHTML = `<i class="fa-solid fa-cloud-arrow-up text-emerald-500"></i> Tersimpan`;
+        }
+
+        function resetQuiz() {
+            if (confirm("Apakah Anda yakin ingin mengulang kuis dari awal? Semua jawaban tersimpan akan dihapus.")) {
+                userAnswers = {};
+                localStorage.removeItem(STORAGE_KEY);
+                currentQuestionIdx = 0;
+                renderQuestion();
+            }
+        }
+
+        function renderMatrix() {
+            const matrixContainer = document.getElementById('question-matrix');
+            matrixContainer.innerHTML = '';
+
+            let answeredCount = 0;
+            let correctCount = 0;
+
+            quizData.forEach((q, idx) => {
+                const isAnswered = userAnswers.hasOwnProperty(q.id);
+                const userChoice = userAnswers[q.id];
+                const isCurrent = idx === currentQuestionIdx;
+
+                let isCorrect = false;
+                if (isAnswered) {
+                    answeredCount++;
+                    if (q.options[userChoice].isCorrect) {
+                        correctCount++;
+                        isCorrect = true;
+                    }
+                }
+
+                if (activeFilter === 'answered' && !isAnswered) return;
+                if (activeFilter === 'unanswered' && isAnswered) return;
+
+                const btn = document.createElement('button');
+                btn.onclick = () => goToQuestion(idx);
+                btn.className = `h-10 text-xs font-bold rounded-lg border transition flex items-center justify-center relative `;
+
+                if (isCurrent) {
+                    btn.classList.add('ring-2', 'ring-blue-500', 'ring-offset-1');
+                }
+
+                if (isAnswered) {
+                    if (isCorrect) {
+                        btn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600');
+                    } else {
+                        btn.classList.add('bg-rose-500', 'text-white', 'border-rose-600');
+                    }
+                } else {
+                    btn.classList.add('bg-slate-100', 'hover:bg-slate-200', 'text-slate-700', 'border-slate-300');
+                }
+
+                btn.innerHTML = `${q.id}`;
+                matrixContainer.appendChild(btn);
+            });
+
+            document.getElementById('answered-count').innerText = answeredCount;
+            document.getElementById('current-score').innerText = `${correctCount * 10} pt`;
+            
+            const progressPercent = (answeredCount / 30) * 100;
+            document.getElementById('progress-bar-inner').style.width = `${progressPercent}%`;
+
+            document.getElementById('filter-all').innerText = `Semua (30)`;
+            document.getElementById('filter-unanswered').innerText = `Belum (${30 - answeredCount})`;
+            document.getElementById('filter-answered').innerText = `Sudah (${answeredCount})`;
+        }
+
+        function setFilter(filter) {
+            activeFilter = filter;
+            ['all', 'unanswered', 'answered'].forEach(f => {
+                const el = document.getElementById(`filter-${f}`);
+                if (f === filter) {
+                    el.className = "flex-1 py-1 rounded bg-white shadow-sm font-bold text-blue-600";
+                } else {
+                    el.className = "flex-1 py-1 rounded hover:bg-white text-slate-600";
+                }
+            });
+            renderMatrix();
+        }
+
+        function renderQuestion() {
+            const q = quizData[currentQuestionIdx];
+            const isAnswered = userAnswers.hasOwnProperty(q.id);
+            const userChoice = userAnswers[q.id];
+
+            document.getElementById('question-badge').innerText = `Soal #${q.id}`;
+            document.getElementById('question-category').innerText = q.category;
+            
+            const statusTag = document.getElementById('question-status-tag');
+            if (isAnswered) {
+                const isCorrect = q.options[userChoice].isCorrect;
+                statusTag.innerText = isCorrect ? "✓ Dijawab Benar" : "✗ Dijawab Salah";
+                statusTag.className = `text-xs font-semibold px-2.5 py-1 rounded-full ${isCorrect ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`;
+            } else {
+                statusTag.innerText = "Belum dijawab";
+                statusTag.className = "text-xs font-medium px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full";
+            }
+
+            document.getElementById('question-text').innerHTML = q.question;
+
+            renderGraphic(q);
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            const optionLetters = ['A', 'B', 'C', 'D'];
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.onclick = () => selectOption(idx);
+                
+                let baseStyle = "w-full text-left p-4 rounded-xl border text-sm transition flex items-start gap-3 relative ";
+                
+                if (isAnswered) {
+                    btn.disabled = true;
+                    if (opt.isCorrect) {
+                        baseStyle += "bg-emerald-50 border-emerald-500 text-emerald-900 font-medium ";
+                    } else if (idx === userChoice && !opt.isCorrect) {
+                        baseStyle += "bg-rose-50 border-rose-500 text-rose-900 font-medium ";
+                    } else {
+                        baseStyle += "bg-slate-50 border-slate-200 text-slate-400 opacity-60 ";
+                    }
+                } else {
+                    baseStyle += "bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:border-blue-300 ";
+                }
+
+                btn.className = baseStyle;
+
+                let iconHtml = `<span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">${optionLetters[idx]}</span>`;
+                
+                if (isAnswered) {
+                    if (opt.isCorrect) {
+                        iconHtml = `<span class="w-6 h-6 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-check"></i></span>`;
+                    } else if (idx === userChoice) {
+                        iconHtml = `<span class="w-6 h-6 rounded-lg bg-rose-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-xmark"></i></span>`;
+                    }
+                }
+
+                btn.innerHTML = `${iconHtml} <div class="flex-1">${opt.text}</div>`;
+                optionsContainer.appendChild(btn);
+            });
+
+            const rationaleBox = document.getElementById('rationale-box');
+            if (isAnswered) {
+                rationaleBox.classList.remove('hidden');
+                const selectedOpt = q.options[userChoice];
+                const header = document.getElementById('rationale-header');
+                const text = document.getElementById('rationale-text');
+
+                if (selectedOpt.isCorrect) {
+                    rationaleBox.className = "rounded-xl p-4 border bg-emerald-50 border-emerald-200 text-emerald-900 text-sm space-y-1";
+                    header.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> Jawaban Anda Benar!`;
+                } else {
+                    rationaleBox.className = "rounded-xl p-4 border bg-rose-50 border-rose-200 text-rose-900 text-sm space-y-1";
+                    header.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-600"></i> Jawaban Kurang Tepat`;
+                }
+                text.innerHTML = selectedOpt.rationale;
+            } else {
+                rationaleBox.classList.add('hidden');
+            }
+
+            document.getElementById('hint-box').classList.add('hidden');
+            document.getElementById('hint-text').innerHTML = q.hint;
+
+            document.getElementById('btn-prev').disabled = currentQuestionIdx === 0;
+            document.getElementById('btn-next').disabled = currentQuestionIdx === quizData.length - 1;
+
+            renderMatrix();
+            refreshMathJax();
+        }
+
+        window.renderCurrentQuestion = renderQuestion;
+
+        // SVG ILLUSTRATION GENERATOR ACCORDING TO USER'S SPECIFIC IMAGES
+        function renderGraphic(q) {
+            const container = document.getElementById('illustration-container');
+            const svgGraphic = document.getElementById('svg-graphic');
+            const svgCaption = document.getElementById('svg-caption');
+
+            if (!q.shape) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+
+            let svgContent = "";
+            let captionText = "";
+
+            if (q.shape === "cube") {
+                svgContent = `
+                <svg width="220" height="150" viewBox="0 0 220 150" fill="none">
+                    <polygon points="60,45 120,25 170,45 110,65" fill="#00b4d8" fill-opacity="0.75" stroke="#38bdf8" stroke-width="2.5"/>
+                    <polygon points="60,45 110,65 110,120 60,100" fill="#0077b6" fill-opacity="0.85" stroke="#38bdf8" stroke-width="2.5"/>
+                    <polygon points="110,65 170,45 170,100 110,120" fill="#03045e" fill-opacity="0.85" stroke="#38bdf8" stroke-width="2.5"/>
+                    <line x1="60" y1="100" x2="110" y2="120" stroke="#fbbf24" stroke-width="3.5"/>
+                </svg>`;
+                captionText = `Ilustrasi Kubus ${q.params.s ? '(Panjang Rusuk $s = ' + q.params.s + '$)' : ''}`;
+            } else if (q.shape === "cuboid") {
+                svgContent = `
+                <svg width="240" height="150" viewBox="0 0 240 150" fill="none">
+                    <polygon points="40,45 130,25 190,45 100,65" fill="#38bdf8" fill-opacity="0.75" stroke="#7dd3fc" stroke-width="2.5"/>
+                    <polygon points="40,45 100,65 100,115 40,95" fill="#0284c7" fill-opacity="0.85" stroke="#7dd3fc" stroke-width="2.5"/>
+                    <polygon points="100,65 190,45 190,95 100,115" fill="#075985" fill-opacity="0.85" stroke="#7dd3fc" stroke-width="2.5"/>
+                </svg>`;
+                captionText = `Ilustrasi Balok (Panjang $p$, Lebar $l$, Tinggi $t$)`;
+            } else if (q.shape === "prism") {
+                // PERSIS SAMA DENGAN GAMBAR 1 (Prisma Segitiga Horizontal)
+                svgContent = `
+                <svg width="250" height="160" viewBox="0 0 250 160" fill="none">
+                    <!-- Sisi Segitiga Depan Siku-Siku (Isi Transparan Biru) -->
+                    <polygon points="60,40 60,120 120,120" fill="#00b4d8" fill-opacity="0.85" stroke="#38bdf8" stroke-width="2.5" stroke-linejoin="round"/>
+                    
+                    <!-- Sisi Atas / Miring Utama -->
+                    <polygon points="60,40 120,120 200,85 120,20" fill="#0077b6" fill-opacity="0.75" stroke="#38bdf8" stroke-width="2.5" stroke-linejoin="round"/>
+                    
+                    <!-- Rusuk Belakang Putus-Putus (Sesuai Gambar 1) -->
+                    <line x1="60" y1="120" x2="120" y2="20" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5 4"/>
+                    <line x1="60" y1="120" x2="200" y2="85" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5 4"/>
+                    <line x1="120" y1="20" x2="200" y2="85" stroke="#38bdf8" stroke-width="2.5"/>
+
+                    <!-- Label Parameter Kuning/Oranye Sesuai Gambar 1 -->
+                    <!-- t_a (Tinggi Alas Siku-siku Kiri) -->
+                    <text x="32" y="85" fill="#fbbf24" font-size="14" font-weight="bold">t_a</text>
+                    
+                    <!-- a (Alas Segitiga Bawah + Panah Orange) -->
+                    <text x="85" y="152" fill="#fbbf24" font-size="14" font-weight="bold">a</text>
+                    <line x1="60" y1="135" x2="120" y2="135" stroke="#f59e0b" stroke-width="2.5"/>
+                    <polygon points="120,131 127,135 120,139" fill="#f59e0b"/>
+
+                    <!-- t_p (Tinggi Prisma / Panjang Tenda) -->
+                    <text x="175" y="125" fill="#fbbf24" font-size="14" font-weight="bold">t_p</text>
+                </svg>`;
+                captionText = `Ilustrasi Prisma Segitiga Siku-Siku (Sesuai Referensi)`;
+            } else if (q.shape === "pentagon") {
+                // PERSIS SAMA DENGAN GAMBAR 2 (Prisma Segi Lima Beraturan)
+                svgContent = `
+                <svg width="220" height="170" viewBox="0 0 220 170" fill="none">
+                    <!-- Sisi Selimut Depan Hijau (Green Shade) -->
+                    <!-- Sisi Depan Tengah -->
+                    <polygon points="85,60 135,60 135,125 85,125" fill="#059669" fill-opacity="0.9" stroke="#34d399" stroke-width="2" stroke-linejoin="round"/>
+                    <!-- Sisi Depan Kiri -->
+                    <polygon points="50,40 85,60 85,125 50,105" fill="#047857" fill-opacity="0.9" stroke="#34d399" stroke-width="2" stroke-linejoin="round"/>
+                    <!-- Sisi Depan Kanan -->
+                    <polygon points="135,60 170,40 170,105 135,125" fill="#065f46" fill-opacity="0.9" stroke="#34d399" stroke-width="2" stroke-linejoin="round"/>
+
+                    <!-- Sisi Atap Biru Cerah (Cyan / Light Blue) -->
+                    <polygon points="110,20 170,40 135,60 85,60 50,40" fill="#38bdf8" stroke="#7dd3fc" stroke-width="2.5" stroke-linejoin="round"/>
+
+                    <!-- Rusuk/Garis Proyeksi Dalam Sisi Bawah -->
+                    <polyline points="50,105 85,125 135,125 170,105 110,145 50,105" fill="none" stroke="#34d399" stroke-width="2" stroke-linejoin="round"/>
+                    <line x1="110" y1="20" x2="110" y2="145" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3 3"/>
+                </svg>`;
+                captionText = `Ilustrasi Prisma Segi Lima Beraturan (Sesuai Referensi)`;
+            } else if (q.shape === "hexagon") {
+                svgContent = `
+                <svg width="220" height="160" viewBox="0 0 220 160" fill="none">
+                    <!-- Atap Segi Enam Kuning/Emas -->
+                    <polygon points="110,18 150,25 170,42 150,58 110,58 90,42" fill="#fbbf24" fill-opacity="0.85" stroke="#f59e0b" stroke-width="2.5" stroke-linejoin="round"/>
+                    
+                    <!-- Sisi Tegak Kiri -->
+                    <polygon points="90,42 110,58 110,112 90,96" fill="#d97706" fill-opacity="0.9" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round"/>
+                    <!-- Sisi Tegak Tengah -->
+                    <polygon points="110,58 150,58 150,112 110,112" fill="#f59e0b" fill-opacity="0.85" stroke="#fbbf24" stroke-width="2" stroke-linejoin="round"/>
+                    <!-- Sisi Tegak Kanan -->
+                    <polygon points="150,58 170,42 170,96 150,112" fill="#b45309" fill-opacity="0.9" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round"/>
+                </svg>`;
+                captionText = `Ilustrasi Prisma Segi Enam Beraturan`;
+            }
+
+            svgGraphic.innerHTML = svgContent;
+            svgCaption.innerHTML = captionText;
+        }
+
+        // SVG ILLUSTRATION GENERATOR ACCORDING TO USER'S SPECIFIC IMAGES
+        function renderGraphic(q) {
+            const container = document.getElementById('illustration-container');
+            const svgGraphic = document.getElementById('svg-graphic');
+            const svgCaption = document.getElementById('svg-caption');
+
+            if (!q.shape) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+
+            let svgContent = "";
+            let captionText = "";
+
+            if (q.shape === "cube") {
+                svgContent = `
+                <svg width="220" height="150" viewBox="0 0 220 150" fill="none">
+                    <polygon points="60,45 120,25 170,45 110,65" fill="#00b4d8" fill-opacity="0.75" stroke="#38bdf8" stroke-width="2.5"/>
+                    <polygon points="60,45 110,65 110,120 60,100" fill="#0077b6" fill-opacity="0.85" stroke="#38bdf8" stroke-width="2.5"/>
+                    <polygon points="110,65 170,45 170,100 110,120" fill="#03045e" fill-opacity="0.85" stroke="#38bdf8" stroke-width="2.5"/>
+                    <line x1="60" y1="100" x2="110" y2="120" stroke="#fbbf24" stroke-width="3.5"/>
+                </svg>`;
+                captionText = `Ilustrasi Kubus ${q.params.s ? '(Panjang Rusuk $s = ' + q.params.s + '$)' : ''}`;
+            } else if (q.shape === "cuboid") {
+                svgContent = `
+                <svg width="240" height="150" viewBox="0 0 240 150" fill="none">
+                    <polygon points="40,45 130,25 190,45 100,65" fill="#38bdf8" fill-opacity="0.75" stroke="#7dd3fc" stroke-width="2.5"/>
+                    <polygon points="40,45 100,65 100,115 40,95" fill="#0284c7" fill-opacity="0.85" stroke="#7dd3fc" stroke-width="2.5"/>
+                    <polygon points="100,65 190,45 190,95 100,115" fill="#075985" fill-opacity="0.85" stroke="#7dd3fc" stroke-width="2.5"/>
+                </svg>`;
+                captionText = `Ilustrasi Balok (Panjang $p$, Lebar $l$, Tinggi $t$)`;
+            } else if (q.shape === "prism") {
+                // PERSIS SAMA DENGAN GAMBAR 1 (Prisma Segitiga Horizontal)
+                svgContent = `
+                <svg width="250" height="160" viewBox="0 0 250 160" fill="none">
+                    <!-- Sisi Segitiga Depan Siku-Siku (Isi Transparan Biru) -->
+                    <polygon points="60,40 60,120 120,120" fill="#00b4d8" fill-opacity="0.85" stroke="#38bdf8" stroke-width="2.5" stroke-linejoin="round"/>
+                    
+                    <!-- Sisi Atas / Miring Utama -->
+                    <polygon points="60,40 120,120 200,85 120,20" fill="#0077b6" fill-opacity="0.75" stroke="#38bdf8" stroke-width="2.5" stroke-linejoin="round"/>
+                    
+                    <!-- Rusuk Belakang Putus-Putus -->
+                    <line x1="60" y1="120" x2="120" y2="20" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5 4"/>
+                    <line x1="60" y1="120" x2="200" y2="85" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5 4"/>
+                    <line x1="120" y1="20" x2="200" y2="85" stroke="#38bdf8" stroke-width="2.5"/>
+
+                    <!-- Label Parameter -->
+                    <text x="32" y="85" fill="#fbbf24" font-size="14" font-weight="bold">t_a</text>
+                    <text x="85" y="152" fill="#fbbf24" font-size="14" font-weight="bold">a</text>
+                    <line x1="60" y1="135" x2="120" y2="135" stroke="#f59e0b" stroke-width="2.5"/>
+                    <polygon points="120,131 127,135 120,139" fill="#f59e0b"/>
+                    <text x="175" y="125" fill="#fbbf24" font-size="14" font-weight="bold">t_p</text>
+                </svg>`;
+                captionText = `Ilustrasi Prisma Segitiga Siku-Siku`;
+            } else if (q.shape === "pentagon") {
+                // PERSIS SAMA DENGAN GAMBAR REFERENSI SEGI LIMA (PROPORSIONAL DAN RAPI)
+                svgContent = `
+                <svg width="220" height="180" viewBox="0 0 220 180" fill="none">
+                    <!-- Sisi Atas (Atap Segi Lima Beraturan) - Biru -->
+                    <polygon points="110,25 155,42 138,78 82,78 65,42" fill="#38bdf8" stroke="#7dd3fc" stroke-width="2.5" stroke-linejoin="round"/>
+
+                    <!-- Sisi Selimut Tegak Depan - Kiri -->
+                    <polygon points="65,42 82,78 82,130 65,94" fill="#047857" fill-opacity="0.9" stroke="#7dd3fc" stroke-width="2" stroke-linejoin="round"/>
+                    
+                    <!-- Sisi Selimut Tegak Depan - Tengah -->
+                    <polygon points="82,78 138,78 138,130 82,130" fill="#059669" fill-opacity="0.95" stroke="#7dd3fc" stroke-width="2" stroke-linejoin="round"/>
+                    
+                    <!-- Sisi Selimut Tegak Depan - Kanan -->
+                    <polygon points="138,78 155,42 155,94 138,130" fill="#065f46" fill-opacity="0.9" stroke="#7dd3fc" stroke-width="2" stroke-linejoin="round"/>
+
+                    <!-- Line Proyeksi Alas Bawah -->
+                    <polyline points="65,94 82,130 138,130 155,94" fill="none" stroke="#7dd3fc" stroke-width="2.5" stroke-linejoin="round"/>
+                    
+                    <!-- Rusuk Belakang Transparan (Dashed Line) -->
+                    <polyline points="65,94 110,77 155,94" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 3"/>
+                    <line x1="110" y1="25" x2="110" y2="77" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 3"/>
+                </svg>`;
+                captionText = `Ilustrasi Prisma Segi Lima Beraturan`;
+            } else if (q.shape === "hexagon") {
+                // PERSIS SAMA DENGAN GAMBAR REFERENSI SEGI ENAM (Simetris & Tidak Mencong)
+                svgContent = `
+                <svg width="220" height="180" viewBox="0 0 220 180" fill="none">
+                    <!-- Atas (Atap Segi Enam Isometrik Simetris) - Emas/Oranye -->
+                    <polygon points="110,20 150,32 150,55 110,67 70,55 70,32" fill="#d97706" fill-opacity="0.9" stroke="#fbbf24" stroke-width="2.5" stroke-linejoin="round"/>
+
+                    <!-- Sisi Tegak Kiri -->
+                    <polygon points="70,55 110,67 110,135 70,123" fill="#b45309" fill-opacity="0.95" stroke="#fbbf24" stroke-width="2" stroke-linejoin="round"/>
+
+                    <!-- Sisi Tegak Kanan -->
+                    <polygon points="110,67 150,55 150,123 110,135" fill="#d97706" fill-opacity="0.9" stroke="#fbbf24" stroke-width="2" stroke-linejoin="round"/>
+
+                    <!-- Sisi Samping Paling Kiri -->
+                    <polygon points="70,32 70,55 70,123 70,100" fill="#92400e" fill-opacity="0.9" stroke="#fbbf24" stroke-width="2" stroke-linejoin="round"/>
+
+                    <!-- Sisi Samping Paling Kanan -->
+                    <polygon points="150,32 150,55 150,123 150,100" fill="#78350f" fill-opacity="0.9" stroke="#fbbf24" stroke-width="2" stroke-linejoin="round"/>
+
+                    <!-- Bingkai Luar Sisi Depan Bawah -->
+                    <polyline points="70,123 110,135 150,123" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linejoin="round"/>
+                </svg>`;
+                captionText = `Ilustrasi Prisma Segi Enam Beraturan`;
+            }
+
+            svgGraphic.innerHTML = svgContent;
+            svgCaption.innerHTML = captionText;
+        }
+
+        function selectOption(optionIndex) {
+            const q = quizData[currentQuestionIdx];
+            if (userAnswers.hasOwnProperty(q.id)) return;
+
+            userAnswers[q.id] = optionIndex;
+            saveState();
+            renderQuestion();
+        }
+
+        function toggleHint() {
+            const hintBox = document.getElementById('hint-box');
+            hintBox.classList.toggle('hidden');
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIdx < quizData.length - 1) {
+                currentQuestionIdx++;
+                renderQuestion();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestionIdx > 0) {
+                currentQuestionIdx--;
+                renderQuestion();
+            }
+        }
+
+        function goToQuestion(idx) {
+            currentQuestionIdx = idx;
+            renderQuestion();
+        }
+
+        window.onload = function() {
+            loadSavedState();
+            renderQuestion();
+        };
+    </script>
+</body>
+</html>
